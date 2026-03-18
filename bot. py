@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 logging.basicConfig(level=logging.INFO)
 
 TOKEN = "8611892704:AAFO_owIa_COlz57cigbabtMhIeSY7MgS7g"
-CHANNEL_ID = -1003568390240
+CHANNEL_ID = -1003309289000
 
 # Состояния (добавлено MILEAGE)
 (BRAND, MODEL, YEAR, MILEAGE, ENGINE, FUEL, GEARBOX, DESC, PRICE, 
