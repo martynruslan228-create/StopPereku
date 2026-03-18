@@ -8,7 +8,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # --- НАСТРОЙКИ ТЕСТОВОГО БОТА ---
 TOKEN = "8611892704:AAFO_owIa_COlz57cigbabtMhIeSY7MgS7g"
-CHANNEL_ID = -1002233445566  # Убедись, что этот ID верный для твоего ТЕСТОВОГО канала
+CHANNEL_ID = -1003309289000
 
 # Состояния диалога
 (BRAND, MODEL, YEAR, MILEAGE, ENGINE, FUEL, GEARBOX, DESC, PRICE, 
