@@ -13,7 +13,7 @@ CHANNEL_ID = -1003309289000
  PHOTO, DISTRICT, CITY, TG_CONTACT, PHONE, CHOOSE_CAR, WAIT_NEW_PRICE) = range(16)
 
 def init_db():
-    conn = sqlite3.connect("ads.db")
+    conn = sqlite3.connect("test_ads.db")
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS ads 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, msg_id INTEGER, 
