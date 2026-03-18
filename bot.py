@@ -1,69 +1,51 @@
-async def process_car_check(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # 1. Очистка текста от пробелов и перевод в верхний регистр
-    raw_number = update.message.text.upper().replace(" ", "").strip()
-    
-    if raw_number == "❌СКАСУВАТИ": 
-        return await start(update, context)
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "🔍 Перевірка за номером":
+        await update.message.reply_text("Надішліть держномер (наприклад: HH6743AC):")
+        return
 
-    # 2. Нормализация (замена кириллицы на латиницу для API)
-    symbols = {
-        'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H', 
-        'І': 'I', 'К': 'K', 'М': 'M', 'О': 'O', 'Р': 'P', 
-        'Т': 'T', 'Х': 'X'
-    }
-    number = "".join(symbols.get(char, char) for char in raw_number)
+    # 1. Жесткая нормализация номера
+    raw = text.upper().replace(" ", "").strip()
+    # Карта замены: укр/рус -> латиница
+    c = {'А':'A','В':'B','С':'C','Е':'E','Н':'H','І':'I','К':'K','М':'M','О':'O','Р':'P','Т':'T','Х':'X'}
+    number = "".join(c.get(char, char) for char in raw)
 
-    await update.message.reply_text(f"🔎 Запит до реєстру для номера {number}...")
+    await update.message.reply_text(f"🛰 Шукаю {number} через API...")
 
     try:
+        # 2. Формируем запрос
         url = f"https://baza-gai.com.ua/api/v1/catalog/num/{number}"
-        headers = {
-            "Accept": "application/json", 
-            "X-Api-Key": CHECK_API_KEY
-        }
+        # Пробуем передать ключ и в заголовке, и в ссылке (для верности)
+        headers = {"Accept": "application/json", "X-Api-Key": CHECK_API_KEY}
         
-        response = requests.get(url, headers=headers, timeout=10)
-        logging.info(f"API Response for {number}: {response.status_code}")
-
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        # 3. Если получили данные
         if response.status_code == 200:
             data = response.json()
-            
-            # Извлекаем данные с защитой от пустых полей
             vendor = data.get('vendor', 'Невідомо')
             model = data.get('model', '')
             year = data.get('model_year', 'Невідомо')
-            color = data.get('color', {}).get('ua', 'Невідомо')
-            engine = data.get('digits', {}).get('engine', 'Не вказано')
             
-            last_op = data.get('last_operation', {})
-            op_date = last_op.get('date', 'Дані відсутні')
-            op_name = last_op.get('ua', 'Опис відсутній')
-
             res = (
-                f"✅ **ДАНІ ЗНАЙДЕНО**\n"
-                f"━━━━━━━━━━━━━━━━\n"
-                f"🚗 **Авто:** {vendor} {model} ({year})\n"
-                f"🎨 **Колір:** {color}\n"
-                f"⛽ **Двигун:** {engine} л.\n"
-                f"━━━━━━━━━━━━━━━━\n"
-                f"📝 **Остання операція:**\n"
-                f"📅 {op_date}\n"
-                f"ℹ️ {op_name}"
+                f"✅ **ЗНАЙДЕНО:**\n"
+                f"🚗 {vendor} {model} ({year} р.в.)\n"
+                f"🎨 Колір: {data.get('color', {}).get('ua', '-')}\n"
+                f"⛽ Двигун: {data.get('digits', {}).get('engine', '-')} л.\n"
+                f"📅 Реєстрація: {data.get('last_operation', {}).get('date', '-')}"
             )
             await update.message.reply_text(res, parse_mode='Markdown')
         
-        elif response.status_code == 404:
-            await update.message.reply_text(f"❌ Номер {number} не знайдено.\nСпробуйте ввести номер іншою мовою або перевірте правильність.")
-        
-        elif response.status_code == 403:
-            await update.message.reply_text("⚠️ Помилка: Ваш API ключ заблоковано або невірний.")
-            
+        # 4. Если ошибка — выводим детали
         else:
-            await update.message.reply_text(f"⚠️ Помилка сервера (Код: {response.status_code}). Спробуйте пізніше.")
+            error_details = response.text[:100] # Берем кусочек текста ошибки
+            await update.message.reply_text(
+                f"❌ Номер {number} не знайдено.\n"
+                f"Статус сервера: {response.status_code}\n"
+                f"Відповідь: `{error_details}`", 
+                parse_mode='Markdown'
+            )
 
     except Exception as e:
-        logging.error(f"Car check error: {e}")
-        await update.message.reply_text("⚠️ Технічна помилка при з'єднанні з базою.")
-
-    return await start(update, context)
-    
+        await update.message.reply_text(f"💥 Помилка підключення: {e}")
+        
